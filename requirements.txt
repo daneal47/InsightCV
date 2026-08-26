@@ -12,3 +12,4 @@ pyresparser
 spacy
 PyMySQL
 geocoder
+plotly
