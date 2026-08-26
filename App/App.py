@@ -2,6 +2,14 @@
 
 ###### Packages Used ######
 import streamlit as st # core package used in this project
+import nltk
+
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('universal_tagset')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
 import pandas as pd
 import base64, random
 import time,datetime
