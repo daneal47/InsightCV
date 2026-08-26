@@ -180,7 +180,7 @@ connection = pymysql.connect(
     password='AVNS_iAW_6QlTg-rv4Z2Z0lx',  # اضغط على أيقونة العين 👁️ بجانب Password لنسخها
     db='defaultdb',
     port=15214,
-    ssl={'ca': 'ca.pem'}  # مطلوب لأن Aiven يتطلب اتصال آمن (SSL mode: REQUIRED)
+    ssl={'ca': 'App/ca.pem'}  # مطلوب لأن Aiven يتطلب اتصال آمن (SSL mode: REQUIRED)
 )
 cursor = connection.cursor()
 
