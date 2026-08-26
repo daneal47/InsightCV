@@ -13,3 +13,4 @@ spacy
 PyMySQL
 geocoder
 plotly
+geopy
