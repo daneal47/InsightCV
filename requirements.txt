@@ -14,3 +14,4 @@ PyMySQL
 geocoder
 plotly
 geopy
+pdfminer3
