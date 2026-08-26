@@ -10,3 +10,4 @@ docx2txt
 Pillow
 pyresparser
 spacy
+PyMySQL
