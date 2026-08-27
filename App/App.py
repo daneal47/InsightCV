@@ -697,16 +697,16 @@ def run():
         if pdf_file is not None:
             with st.spinner('Hang On While We Cook Magic For You...'):
                 time.sleep(4)
-        
+
             ### saving the uploaded resume to folder
             target_dir = './Uploaded_Resumes'
-                 if not os.path.exists(target_dir):
-                    os.makedirs(target_dir, exist_ok=True)
-            
-                 save_image_path = os.path.join(target_dir, pdf_file.name)
-                 pdf_name = pdf_file.name
-                 with open(save_image_path, "wb") as f:
-                   f.write(pdf_file.getbuffer())
+            if not os.path.exists(target_dir):
+                os.makedirs(target_dir, exist_ok=True)
+
+            save_image_path = os.path.join(target_dir, pdf_file.name)
+            pdf_name = pdf_file.name
+            with open(save_image_path, "wb") as f:
+                f.write(pdf_file.getbuffer())
             show_pdf(save_image_path)
 
             ### parsing and extracting whole resume 
