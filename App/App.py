@@ -24,6 +24,7 @@ import re
 import plotly.express as px # to create visualisations at the admin session
 import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
+import getpass
 # libraries used to parse the pdf files
 from pyresparser import ResumeParser
 from pdfminer3.layout import LAParams, LTTextBox
@@ -651,12 +652,25 @@ def run():
         act_mail = st.text_input('Mail*')
         act_mob  = st.text_input('Mobile Number*')
         sec_token = secrets.token_urlsafe(12)
+        try:
         host_name = socket.gethostname()
         ip_add = socket.gethostbyname(host_name)
-        dev_user = os.getlogin()
-        os_name_ver = platform.system() + " " + platform.release()
-        g = geocoder.ip('me')
-        latlong = g.latlng
+       except Exception:
+        host_name = "StreamlitServer"
+        ip_add = "127.0.0.1"
+
+       try:
+       dev_user = os.getlogin()
+       except Exception:
+       dev_user = getpass.getuser()
+
+      os_name_ver = platform.system() + " " + platform.release()
+
+       try:
+      g = geocoder.ip('me')
+      latlong = g.latlng if (g and g.latlng) else [0.0, 0.0]
+      except Exception:
+      latlong = [0.0, 0.0]
         ### Wrapped in try/except so a slow/unreachable geocoding service
         ### doesn't crash the whole app (this data is only used for admin stats)
         try:
