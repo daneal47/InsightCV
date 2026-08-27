@@ -25,6 +25,7 @@ import plotly.express as px # to create visualisations at the admin session
 import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
 import getpass
+import spacy
 # libraries used to parse the pdf files
 from pyresparser import ResumeParser
 from pdfminer3.layout import LAParams, LTTextBox
@@ -710,6 +711,13 @@ def run():
             show_pdf(save_image_path)
 
             ### parsing and extracting whole resume 
+            try:
+                nlp = spacy.load('en_core_web_sm')
+            except OSError:
+                from spacy.cli import download
+                download('en_core_web_sm')
+                nlp = spacy.load('en_core_web_sm')
+
             resume_data = ResumeParser(save_image_path).get_extracted_data()
             if resume_data:
                 
