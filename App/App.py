@@ -664,7 +664,7 @@ def run():
         except Exception:
             dev_user = getpass.getuser()
 
-          os_name_ver = platform.system() + " " + platform.release()
+            os_name_ver = platform.system() + " " + platform.release()
 
         try:
             g = geocoder.ip('me')
