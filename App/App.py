@@ -699,7 +699,7 @@ def run():
                 time.sleep(4)
         
             ### saving the uploaded resume to folder
-           target_dir = './Uploaded_Resumes'
+            target_dir = './Uploaded_Resumes'
                if not os.path.exists(target_dir):
                   os.makedirs(target_dir, exist_ok=True)
             
