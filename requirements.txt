@@ -14,3 +14,4 @@ pymysql
 geocoder
 geopy
 requests
+pdfminer3
