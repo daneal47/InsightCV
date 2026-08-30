@@ -57,6 +57,20 @@ from pyresparser import utils as _pyresparser_utils
 from spacy.matcher import Matcher as _Matcher
 
 
+def _extract_name_spacy3(nlp_text, matcher):
+    """Re-implementation of pyresparser.utils.extract_name compatible with
+    spaCy 3.x's Matcher.add() signature (patterns must be passed as a single
+    list argument, not unpacked as *args like in spaCy 2.x)."""
+    pattern = [{'POS': 'PROPN'}, {'POS': 'PROPN'}, {'POS': 'PROPN'}]
+    matcher.add('NAME', [pattern])
+    matches = matcher(nlp_text)
+    for _match_id, start, end in matches:
+        span = nlp_text[start:end]
+        if 'name' not in span.text.lower():
+            return span.text
+    return None
+
+
 class ResumeParser(object):
     def __init__(self, resume, skills_file=None, custom_regex=None):
         nlp = spacy.load('en_core_web_sm')
@@ -98,7 +112,7 @@ class ResumeParser(object):
 
     def __get_basic_details(self):
         cust_ent = _pyresparser_utils.extract_entities_wih_custom_model(self.__custom_nlp)
-        name = _pyresparser_utils.extract_name(self.__nlp, matcher=self.__matcher)
+        name = _extract_name_spacy3(self.__nlp, matcher=self.__matcher)
         email = _pyresparser_utils.extract_email(self.__text)
         mobile = _pyresparser_utils.extract_mobile_number(self.__text, self.__custom_regex)
         skills = _pyresparser_utils.extract_skills(self.__nlp, self.__noun_chunks, self.__skills_file)
