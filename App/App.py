@@ -31,8 +31,121 @@ nltk.download('universal_tagset')
 nltk.download('maxent_ne_chunker')
 nltk.download('words')
 
+# ============================================================================
+# NEW: Auto-patch pyresparser's resume_parser.py on every cloud startup.
+#
+# Locally, this fix was applied by manually replacing the file inside
+# venvapp/Lib/site-packages/pyresparser/resume_parser.py. On Streamlit Cloud
+# the filesystem is rebuilt from scratch on every deploy/reboot, so that
+# manual edit is lost every time. Instead, we write the same patched content
+# into the installed package automatically, before pyresparser is imported
+# and used anywhere else in this app.
+# ============================================================================
+import importlib
+
+_PATCHED_RESUME_PARSER_SOURCE = """import os
+import multiprocessing as mp
+import io
+import spacy
+import pprint
+from spacy.matcher import Matcher
+from . import utils
+
+
+class ResumeParser(object):
+
+    def __init__(
+        self,
+        resume,
+        skills_file=None,
+        custom_regex=None
+    ):
+        nlp = spacy.load('en_core_web_sm')
+        try:
+            custom_nlp = spacy.load(os.path.dirname(os.path.abspath(__file__)))
+        except Exception:
+            custom_nlp = nlp
+        self.__skills_file = skills_file
+        self.__custom_regex = custom_regex
+        self.__matcher = Matcher(nlp.vocab)
+        self.__details = {
+            'name': None,
+            'email': None,
+            'mobile_number': None,
+            'skills': None,
+            'degree': None,
+            'no_of_pages': None,
+        }
+        self.__resume = resume
+        if not isinstance(self.__resume, io.BytesIO):
+            ext = os.path.splitext(self.__resume)[1].split('.')[1]
+        else:
+            ext = self.__resume.name.split('.')[1]
+        self.__text_raw = utils.extract_text(self.__resume, '.' + ext)
+        self.__text = ' '.join(self.__text_raw.split())
+        self.__nlp = nlp(self.__text)
+        self.__custom_nlp = custom_nlp(self.__text_raw)
+        self.__noun_chunks = list(self.__nlp.noun_chunks)
+        self.__get_basic_details()
+
+    def get_extracted_data(self):
+        return self.__details
+
+    def __get_basic_details(self):
+        cust_ent = utils.extract_entities_wih_custom_model(
+                            self.__custom_nlp
+                        )
+        name = utils.extract_name(self.__nlp, matcher=self.__matcher)
+        email = utils.extract_email(self.__text)
+        mobile = utils.extract_mobile_number(self.__text, self.__custom_regex)
+        skills = utils.extract_skills(
+                    self.__nlp,
+                    self.__noun_chunks,
+                    self.__skills_file
+                )
+
+        entities = utils.extract_entity_sections_grad(self.__text_raw)
+
+        try:
+            self.__details['name'] = cust_ent['Name'][0]
+        except (IndexError, KeyError):
+            self.__details['name'] = name
+
+        self.__details['email'] = email
+        self.__details['mobile_number'] = mobile
+        self.__details['skills'] = skills
+        self.__details['no_of_pages'] = utils.get_number_of_pages(self.__resume)
+
+        try:
+            self.__details['degree'] = cust_ent['Degree']
+        except KeyError:
+            pass
+
+        return
+
+
+def resume_result_wrapper(resume):
+    parser = ResumeParser(resume)
+    return parser.get_extracted_data()
+"""
+
+try:
+    import pyresparser
+    _pkg_dir = os.path.dirname(pyresparser.__file__)
+    _target_file = os.path.join(_pkg_dir, "resume_parser.py")
+    with open(_target_file, "w", encoding="utf-8") as _f:
+        _f.write(_PATCHED_RESUME_PARSER_SOURCE)
+    # Force Python to pick up the file we just rewrote on disk
+    import pyresparser.resume_parser as _rp_module
+    importlib.reload(_rp_module)
+    importlib.reload(pyresparser)
+except Exception as _patch_err:
+    # If patching fails for any reason, fall back to whatever pip installed —
+    # better to attempt a normal import than to crash the whole app here.
+    print(f"[startup patch] Could not patch pyresparser: {_patch_err}")
+
 from pyresparser import ResumeParser
-from pdfminer3.layout import LAParams, LTExtBox
+from pdfminer3.layout import LAParams, LTTextBox
 from pdfminer3.pdfpage import PDFPage
 from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer3.converter import TextConverter
