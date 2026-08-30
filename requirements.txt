@@ -8,16 +8,10 @@ python-docx
 docx2txt
 Pillow
 pyresparser
-spacy==2.3.5
-thinc==7.4.5
-blis==0.7.8
-cymem==2.0.6
-murmurhash==1.0.8
-preshed==3.0.7
+spacy<3.8
 PyMySQL
 geocoder
 plotly
 geopy
 pdfminer3
 streamlit-tags
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.3.1/en_core_web_sm-2.3.1.tar.gz
