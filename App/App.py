@@ -587,7 +587,7 @@ def run():
     apply_theme_and_language()
 
     # (Logo, Heading, Sidebar etc)
-    img = Image.open('./Logo/RESUM.jpg')
+    img = Image.open('./App/Logo/RESUM.jpg')
     st.image(img)
     st.sidebar.markdown(t['sidebar_title'])
     activities = ["User", "Feedback", "About", "University", "Admin"]
