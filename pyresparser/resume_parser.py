@@ -9,40 +9,42 @@ from . import utils
 
 class ResumeParser(object):
 
-    def __init__(
-        self,
-        resume,
-        skills_file=None,
-        custom_regex=None
-    ):
-        nlp = spacy.load('en_core_web_sm')
-        try:
-            custom_nlp = spacy.load(os.path.dirname(os.path.abspath(__file__)))
-        except Exception:
-            custom_nlp = nlp
-        custom_nlp = spacy.load(os.path.dirname(os.path.abspath(__file__)))
-        self.__skills_file = skills_file
-        self.__custom_regex = custom_regex
-        self.__matcher = Matcher(nlp.vocab)
-        self.__details = {
-            'name': None,
-            'email': None,
-            'mobile_number': None,
-            'skills': None,
-            'degree': None,
-            'no_of_pages': None,
-        }
-        self.__resume = resume
-        if not isinstance(self.__resume, io.BytesIO):
-            ext = os.path.splitext(self.__resume)[1].split('.')[1]
-        else:
-            ext = self.__resume.name.split('.')[1]
-        self.__text_raw = utils.extract_text(self.__resume, '.' + ext)
-        self.__text = ' '.join(self.__text_raw.split())
-        self.__nlp = nlp(self.__text)
-        self.__custom_nlp = custom_nlp(self.__text_raw)
-        self.__noun_chunks = list(self.__nlp.noun_chunks)
-        self.__get_basic_details()
+   def init(
+    self,
+    resume,
+    skills_file=None,
+    custom_regex=None
+):
+    nlp = spacy.load("en_core_web_sm")
+    try:
+        custom_nlp = spacy.load("en_core_web_sm")
+    except:
+        custom_nlp = nlp
+    
+    self._skills_file = skills_file
+    self._custom_regex = custom_regex
+    self._matcher = Matcher(nlp.vocab)
+    self._details = {
+        'name': None,
+        'email': None,
+        'mobile_number': None,
+        'skills': None,
+        'degree': None,
+        'no_of_pages': None,
+    }
+    
+    self._resume = resume
+    if not isinstance(self._resume, io.ByteIO):
+        ext = os.path.splitext(self._resume)[1].split('.')[1]  # ✅
+    else:
+        ext = self._resume.name.split('.')[1]
+    
+    self._text_raw = utils.extract_text(self._resume, '.', ext)  # ✅
+    self._text = ''.join(self._text_raw.split())
+    self._nlp = nlp(self._text)
+    self._custom_nlp = custom_nlp(self._text_raw)
+    self._noun_chunks = list(self._nlp.noun_chunks)
+    self._get_basic_details()
 
     def get_extracted_data(self):
         return self.__details
