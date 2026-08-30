@@ -39,42 +39,40 @@ nltk.download('maxent_ne_chunker')
 nltk.download('words')
 
 # ============================================================================
-# NEW: Auto-patch pyresparser's resume_parser.py on every cloud startup.
+# NEW: In-memory replacement for pyresparser's ResumeParser class.
 #
-# Locally, this fix was applied by manually replacing the file inside
-# venvapp/Lib/site-packages/pyresparser/resume_parser.py. On Streamlit Cloud
-# the filesystem is rebuilt from scratch on every deploy/reboot, so that
-# manual edit is lost every time. Instead, we write the same patched content
-# into the installed package automatically, before pyresparser is imported
-# and used anywhere else in this app.
+# The original fix was applied by physically replacing
+# venvapp/Lib/site-packages/pyresparser/resume_parser.py on disk. On
+# Streamlit Cloud, the app process does NOT have write permission to its own
+# site-packages directory at runtime (confirmed by an earlier
+# "Permission denied" error), so writing a patched file there silently fails
+# and the original, unguarded pyresparser code keeps running instead.
+#
+# The fix below sidesteps the filesystem entirely: it imports only
+# `pyresparser.utils` (unmodified, safe) and defines our own corrected
+# ResumeParser class directly here, purely in memory. This guarantees the
+# fix is always active, regardless of any host's file permissions.
 # ============================================================================
-import importlib
-
-_PATCHED_RESUME_PARSER_SOURCE = """import os
-import multiprocessing as mp
-import io
-import spacy
-import pprint
-from spacy.matcher import Matcher
-from . import utils
+from pyresparser import utils as _pyresparser_utils
+from spacy.matcher import Matcher as _Matcher
 
 
 class ResumeParser(object):
-
-    def __init__(
-        self,
-        resume,
-        skills_file=None,
-        custom_regex=None
-    ):
+    def __init__(self, resume, skills_file=None, custom_regex=None):
         nlp = spacy.load('en_core_web_sm')
         try:
-            custom_nlp = spacy.load(os.path.dirname(os.path.abspath(__file__)))
+            import pyresparser as _pyresparser_pkg
+            custom_nlp = spacy.load(os.path.dirname(os.path.abspath(_pyresparser_pkg.__file__)))
         except Exception:
+            # pyresparser's bundled custom NER model was trained for an old
+            # spaCy 2.x format and can't load under spaCy 3.x — fall back to
+            # the standard model instead of crashing. Name/Degree extraction
+            # simply uses the standard NLP pipeline in this case.
             custom_nlp = nlp
+
         self.__skills_file = skills_file
         self.__custom_regex = custom_regex
-        self.__matcher = Matcher(nlp.vocab)
+        self.__matcher = _Matcher(nlp.vocab)
         self.__details = {
             'name': None,
             'email': None,
@@ -88,7 +86,7 @@ class ResumeParser(object):
             ext = os.path.splitext(self.__resume)[1].split('.')[1]
         else:
             ext = self.__resume.name.split('.')[1]
-        self.__text_raw = utils.extract_text(self.__resume, '.' + ext)
+        self.__text_raw = _pyresparser_utils.extract_text(self.__resume, '.' + ext)
         self.__text = ' '.join(self.__text_raw.split())
         self.__nlp = nlp(self.__text)
         self.__custom_nlp = custom_nlp(self.__text_raw)
@@ -99,19 +97,11 @@ class ResumeParser(object):
         return self.__details
 
     def __get_basic_details(self):
-        cust_ent = utils.extract_entities_wih_custom_model(
-                            self.__custom_nlp
-                        )
-        name = utils.extract_name(self.__nlp, matcher=self.__matcher)
-        email = utils.extract_email(self.__text)
-        mobile = utils.extract_mobile_number(self.__text, self.__custom_regex)
-        skills = utils.extract_skills(
-                    self.__nlp,
-                    self.__noun_chunks,
-                    self.__skills_file
-                )
-
-        entities = utils.extract_entity_sections_grad(self.__text_raw)
+        cust_ent = _pyresparser_utils.extract_entities_wih_custom_model(self.__custom_nlp)
+        name = _pyresparser_utils.extract_name(self.__nlp, matcher=self.__matcher)
+        email = _pyresparser_utils.extract_email(self.__text)
+        mobile = _pyresparser_utils.extract_mobile_number(self.__text, self.__custom_regex)
+        skills = _pyresparser_utils.extract_skills(self.__nlp, self.__noun_chunks, self.__skills_file)
 
         try:
             self.__details['name'] = cust_ent['Name'][0]
@@ -121,41 +111,18 @@ class ResumeParser(object):
         self.__details['email'] = email
         self.__details['mobile_number'] = mobile
         self.__details['skills'] = skills
-        self.__details['no_of_pages'] = utils.get_number_of_pages(self.__resume)
+        self.__details['no_of_pages'] = _pyresparser_utils.get_number_of_pages(self.__resume)
 
         try:
             self.__details['degree'] = cust_ent['Degree']
         except KeyError:
             pass
 
-        return
-
-
-def resume_result_wrapper(resume):
-    parser = ResumeParser(resume)
-    return parser.get_extracted_data()
-"""
-
-try:
-    import pyresparser
-    _pkg_dir = os.path.dirname(pyresparser.__file__)
-    _target_file = os.path.join(_pkg_dir, "resume_parser.py")
-    with open(_target_file, "w", encoding="utf-8") as _f:
-        _f.write(_PATCHED_RESUME_PARSER_SOURCE)
-    # Force Python to pick up the file we just rewrote on disk
-    import pyresparser.resume_parser as _rp_module
-    importlib.reload(_rp_module)
-    importlib.reload(pyresparser)
-except Exception as _patch_err:
-    # If patching fails for any reason, fall back to whatever pip installed —
-    # better to attempt a normal import than to crash the whole app here.
-    print(f"[startup patch] Could not patch pyresparser: {_patch_err}")
-
-from pyresparser import ResumeParser
 from pdfminer3.layout import LAParams, LTTextBox
 from pdfminer3.pdfpage import PDFPage
 from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer3.converter import TextConverter
+
 
 import streamlit as st
 import pandas as pd
