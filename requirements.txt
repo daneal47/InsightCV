@@ -15,3 +15,4 @@ geocoder
 geopy
 requests
 PyPDF2
+pdfminer 3
