@@ -670,7 +670,7 @@ def run():
         try:
            dev_user = os.getlogin()
         except Exception:
-            dev_user = getpass.getuser()
+            dev_user = os.environ.get("USER", "default_user")
 
             os_name_ver = platform.system() + " " + platform.release()
 
