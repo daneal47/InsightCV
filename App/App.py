@@ -1,45 +1,53 @@
-# Developed by dnoobnerd [https://dnoobnerd.netlify.app]    Made with Streamlit
+# Developed by dnoobnerd [https://dnoobnerd.netlify.app]     Made with Streamlit
 
-
-###### Packages Used ######
-import streamlit as st # core package used in this project
-import pandas as pd
-import base64, random
-import time,datetime
-import pymysql
-import os
-import socket
-import platform
-import geocoder
-import secrets
-import io,random
-import re
-import plotly.express as px # to create visualisations at the admin session
-import plotly.graph_objects as go
-from geopy.geocoders import Nominatim
-# libraries used to parse the pdf files
 import os
 import sys
+import io
+import re
+import time
+import datetime
+import random
+import socket
+import secrets
+import platform
+import base64
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+
+import nltk
+
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('universal_tagset')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
+
 from pyresparser import ResumeParser
 from pdfminer3.layout import LAParams, LTTextBox
 from pdfminer3.pdfpage import PDFPage
-from pdfminer3.pdfinterp import PDFResourceManager
-from pdfminer3.pdfinterp import PDFPageInterpreter
+from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer3.converter import TextConverter
+
+import streamlit as st
+import pandas as pd
+import pymysql
+import geocoder
+import plotly.express as px
+import plotly.graph_objects as go
+from geopy.geocoders import Nominatim
 from streamlit_tags import st_tags
 from PIL import Image
-# pre stored data for prediction purposes
-from Courses import ds_course,web_course,android_course,ios_course,uiux_course,cyber_course,devops_course,data_analyst_course,marketing_course,game_course,resume_videos,interview_videos
-import nltk
-nltk.download('stopwords')
-# NEW: libraries used for Semantic Matching (TF-IDF + Cosine Similarity)
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+from Courses import (
+    ds_course, web_course, android_course, ios_course, 
+    uiux_course, cyber_course, devops_course, data_analyst_course, 
+    marketing_course, game_course, resume_videos, interview_videos
+)
 
 
 ###### Preprocessing functions ######
