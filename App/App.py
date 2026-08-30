@@ -1,15 +1,8 @@
+# Developed by dnoobnerd [https://dnoobnerd.netlify.app]    Made with Streamlit
 
 
 ###### Packages Used ######
 import streamlit as st # core package used in this project
-import nltk
-
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('universal_tagset')
-nltk.download('maxent_ne_chunker')
-nltk.download('words')
 import pandas as pd
 import base64, random
 import time,datetime
@@ -24,9 +17,14 @@ import re
 import plotly.express as px # to create visualisations at the admin session
 import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
-import getpass
-import spacy
 # libraries used to parse the pdf files
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 from pyresparser import ResumeParser
 from pdfminer3.layout import LAParams, LTTextBox
 from pdfminer3.pdfpage import PDFPage
@@ -80,7 +78,7 @@ def pdf_reader(file):
 def show_pdf(file_path):
     with open(file_path, "rb") as f:
         base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-    pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="700" height="800" type="application/pdf">'
+    pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
@@ -177,14 +175,15 @@ def quick_resume_score(resume_text, skills):
 
 # sql connector
 connection = pymysql.connect(
-    host='mysql-246371e5-danealaled47-1a77.l.aivencloud.com',
+    host='mysql-d916bf1-ritakiwan42-14c8.i.aivencloud.com',
     user='avnadmin',
-    password='AVNS_iAW_6QlTg-rv4Z2Z0lx',  # اضغط على أيقونة العين 👁️ بجانب Password لنسخها
+    password='AVNS_Xreg3Nd2EJmOTuRQsgM',  # اضغط على أيقونة العين 👁️ بجانب Password لنسخها
     db='defaultdb',
-    port=15214,
-    ssl={'ca': 'App/ca.pem'}  # مطلوب لأن Aiven يتطلب اتصال آمن (SSL mode: REQUIRED)
+    port=19707,
+    ssl={'ca': 'ca.pem'}  # مطلوب لأن Aiven يتطلب اتصال آمن (SSL mode: REQUIRED)
 )
 cursor = connection.cursor()
+
 
 # inserting miscellaneous data, fetched results, prediction and recommendation into user_data table
 def insert_data(sec_token,ip_add,host_name,dev_user,os_name_ver,latlong,city,state,country,act_name,act_mail,act_mob,name,email,res_score,timestamp,no_of_pages,reco_field,cand_level,skills,recommended_skills,courses,pdf_name):
@@ -565,7 +564,7 @@ def apply_theme_and_language():
 
 
 st.set_page_config(
-   page_title="InsightCV",
+   page_title="AI Resume Analyzer",
    page_icon='./Logo/recommend.png',
 )
 
@@ -580,7 +579,7 @@ def run():
     apply_theme_and_language()
 
     # (Logo, Heading, Sidebar etc)
-    img = Image.open('./App/Logo/RESUM.jpg')
+    img = Image.open('./Logo/RESUM.jpg')
     st.image(img)
     st.sidebar.markdown(t['sidebar_title'])
     activities = ["User", "Feedback", "About", "University", "Admin"]
@@ -653,25 +652,12 @@ def run():
         act_mail = st.text_input('Mail*')
         act_mob  = st.text_input('Mobile Number*')
         sec_token = secrets.token_urlsafe(12)
-        try:
-            host_name = socket.gethostname()
-            ip_add = socket.gethostbyname(host_name)
-        except Exception:
-            host_name = "StreamlitServer"
-            ip_add = "127.0.0.1"
-
-        try:
-            dev_user = os.getlogin()
-        except Exception:
-            dev_user = getpass.getuser()
-
-            os_name_ver = platform.system() + " " + platform.release()
-
-        try:
-            g = geocoder.ip('me')
-            latlong = g.latlng if (g and g.latlng) else [0.0, 0.0]
-        except Exception:
-            latlong = [0.0, 0.0]
+        host_name = socket.gethostname()
+        ip_add = socket.gethostbyname(host_name)
+        dev_user = os.getlogin()
+        os_name_ver = platform.system() + " " + platform.release()
+        g = geocoder.ip('me')
+        latlong = g.latlng
         ### Wrapped in try/except so a slow/unreachable geocoding service
         ### doesn't crash the whole app (this data is only used for admin stats)
         try:
@@ -698,26 +684,15 @@ def run():
         if pdf_file is not None:
             with st.spinner('Hang On While We Cook Magic For You...'):
                 time.sleep(4)
-
+        
             ### saving the uploaded resume to folder
-            target_dir = './Uploaded_Resumes'
-            if not os.path.exists(target_dir):
-                os.makedirs(target_dir, exist_ok=True)
-
-            save_image_path = os.path.join(target_dir, pdf_file.name)
+            save_image_path = './Uploaded_Resumes/'+pdf_file.name
             pdf_name = pdf_file.name
             with open(save_image_path, "wb") as f:
                 f.write(pdf_file.getbuffer())
             show_pdf(save_image_path)
 
             ### parsing and extracting whole resume 
-            try:
-                nlp = spacy.load('en_core_web_sm')
-            except OSError:
-                from spacy.cli import download
-                download('en_core_web_sm')
-                nlp = spacy.load('en_core_web_sm')
-
             resume_data = ResumeParser(save_image_path).get_extracted_data()
             if resume_data:
                 
