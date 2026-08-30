@@ -183,12 +183,12 @@ def quick_resume_score(resume_text, skills):
 
 # sql connector
 connection = pymysql.connect(
-    host='mysql-d916bf1-ritakiwan42-14c8.i.aivencloud.com',
+    host='mysql-246371e5-danealaled47-1a77.l.aivencloud.com',
     user='avnadmin',
-    password='AVNS_Xreg3Nd2EJmOTuRQsgM',  # اضغط على أيقونة العين 👁️ بجانب Password لنسخها
+    password='AVNS_iAW_6QlTg-rv4Z2Z0lx',  # اضغط على أيقونة العين 👁️ بجانب Password لنسخها
     db='defaultdb',
-    port=19707,
-    ssl={'ca': 'ca.pem'}  # مطلوب لأن Aiven يتطلب اتصال آمن (SSL mode: REQUIRED)
+    port=15214,
+    ssl={'ca': 'App/ca.pem'}  # مطلوب لأن Aiven يتطلب اتصال آمن (SSL mode: REQUIRED)
 )
 cursor = connection.cursor()
 
