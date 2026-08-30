@@ -9,7 +9,7 @@ from . import utils
 
 class ResumeParser(object):
 
-    def init(  # ✅ صححت من init إلى init
+    def __init__(  # ✅ صححت من init إلى init
         self,
         resume,
         skills_file=None,
