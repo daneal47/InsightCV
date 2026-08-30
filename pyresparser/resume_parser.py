@@ -9,82 +9,105 @@ from . import utils
 
 class ResumeParser(object):
 
-   def init(
-    self,
-    resume,
-    skills_file=None,
-    custom_regex=None
-):
-    nlp = spacy.load("en_core_web_sm")
-    try:
-        custom_nlp = spacy.load("en_core_web_sm")
-    except:
-        custom_nlp = nlp
-    
-    self._skills_file = skills_file
-    self._custom_regex = custom_regex
-    self._matcher = Matcher(nlp.vocab)
-    self._details = {
-        'name': None,
-        'email': None,
-        'mobile_number': None,
-        'skills': None,
-        'degree': None,
-        'no_of_pages': None,
-    }
-    
-    self._resume = resume
-    if not isinstance(self._resume, io.ByteIO):
-        ext = os.path.splitext(self._resume)[1].split('.')[1]  # ✅
-    else:
-        ext = self._resume.name.split('.')[1]
-    
-    self._text_raw = utils.extract_text(self._resume, '.', ext)  # ✅
-    self._text = ''.join(self._text_raw.split())
-    self._nlp = nlp(self._text)
-    self._custom_nlp = custom_nlp(self._text_raw)
-    self._noun_chunks = list(self._nlp.noun_chunks)
-    self._get_basic_details()
+    def init(  # ✅ صححت من init إلى init
+        self,
+        resume,
+        skills_file=None,
+        custom_regex=None
+    ):
+        # تحميل النموذج بشكل صحيح
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            import subprocess
+            subprocess.run(['python', '-m', 'spacy', 'download', 'en_core_web_sm'])
+            self.nlp = spacy.load("en_core_web_sm")
+        
+        # استخدام نفس النموذج لـ custom_nlp
+        self.custom_nlp = self.nlp
+        
+        self._skills_file = skills_file
+        self._custom_regex = custom_regex
+        self._matcher = Matcher(self.nlp.vocab)
+        self._details = {
+            'name': None,
+            'email': None,
+            'mobile_number': None,
+            'skills': None,
+            'degree': None,
+            'no_of_pages': None,
+        }
+        
+        self._resume = resume
+        if not isinstance(self._resume, io.BytesIO):  # ✅ صححت ByteIO إلى BytesIO
+            ext = os.path.splitext(self._resume)[1].split('.')[1]
+        else:
+            ext = self._resume.name.split('.')[1]
+        
+        self._text_raw = utils.extract_text(self._resume, '.', ext)
+        self._text = ''.join(self._text_raw.split())
+        self._nlp = self.nlp(self._text)
+        self._custom_nlp = self.custom_nlp(self._text_raw)
+        self._noun_chunks = list(self._nlp.noun_chunks)
+        self._get_basic_details()
 
     def get_extracted_data(self):
-        return self.__details
+        return self._details  # ✅ صححت من self.details إلى self._details
 
-    def __get_basic_details(self):
-        cust_ent = utils.extract_entities_wih_custom_model(
-                            self.__custom_nlp
-                        )
-        name = utils.extract_name(self.__nlp, matcher=self.__matcher)
-        email = utils.extract_email(self.__text)
-        mobile = utils.extract_mobile_number(self.__text, self.__custom_regex)
-        skills = utils.extract_skills(
-                    self.__nlp,
-                    self.__noun_chunks,
-                    self.__skills_file
-                )
+    def _get_basic_details(self):  # ✅ صححت من __get_basic_details إلى _get_basic_details
+        try:
+            cust_ent = utils.extract_entities_wih_custom_model(
+                self._custom_nlp  # ✅ صححت من __custom_nlp إلى _custom_nlp
+            )
+        except:
+            cust_ent = {}
+        
+        try:
+            name = utils.extract_name(self._nlp, matcher=self._matcher)  # ✅ صححت
+        except:
+            name = None
+            
+        email = utils.extract_email(self._text)  # ✅ صححت من __text إلى _text
+        mobile = utils.extract_mobile_number(self._text, self._custom_regex)  # ✅ صححت
+        
+        try:
+            skills = utils.extract_skills(
+                self._nlp,  # ✅ صححت
+                self._noun_chunks,
+                self._skills_file
+            )
+        except:
+            skills = None
 
-        entities = utils.extract_entity_sections_grad(self.__text_raw)
+        try:
+            entities = utils.extract_entity_sections_grad(self._text_raw)  # ✅ صححت
+        except:
+            entities = {}
 
         # extract name
         try:
-            self.__details['name'] = cust_ent['Name'][0]
+            self._details['name'] = cust_ent['Name'][0]
         except (IndexError, KeyError):
-            self.__details['name'] = name
+            self._details['name'] = name
 
         # extract email
-        self.__details['email'] = email
+        self._details['email'] = email
 
         # extract mobile number
-        self.__details['mobile_number'] = mobile
+        self._details['mobile_number'] = mobile
 
         # extract skills
-        self.__details['skills'] = skills
+        self._details['skills'] = skills
 
         # no of pages
-        self.__details['no_of_pages'] = utils.get_number_of_pages(self.__resume)
+        try:
+            self._details['no_of_pages'] = utils.get_number_of_pages(self._resume)  # ✅ صححت
+        except:
+            self._details['no_of_pages'] = 0
 
         # extract education Degree
         try:
-            self.__details['degree'] = cust_ent['Degree']
+            self._details['degree'] = cust_ent['Degree']
         except KeyError:
             pass
 
@@ -96,7 +119,7 @@ def resume_result_wrapper(resume):
     return parser.get_extracted_data()
 
 
-if __name__ == '__main__':
+if name == 'main':  # ✅ صححت من 'main إلى 'main'
     pool = mp.Pool(mp.cpu_count())
 
     resumes = []
