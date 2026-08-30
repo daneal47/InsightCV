@@ -20,9 +20,16 @@ import nltk
 import spacy
 try:
     spacy.load('en_core_web_sm')
-except OSError:
-    from spacy.cli import download
-    download('en_core_web_sm')
+except Exception:
+    # NEW: On Streamlit Cloud, runtime pip installs are blocked (Permission
+    # denied), so this download only ever succeeds locally. The model is
+    # now installed at BUILD time via requirements.txt instead — this stays
+    # only as a harmless local-dev fallback and must never crash the app.
+    try:
+        from spacy.cli import download
+        download('en_core_web_sm')
+    except Exception as _model_dl_err:
+        print(f"[startup] Could not auto-download en_core_web_sm (expected on some hosts): {_model_dl_err}")
 
 nltk.download('stopwords')
 nltk.download('punkt')
