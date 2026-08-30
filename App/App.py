@@ -32,7 +32,7 @@ nltk.download('maxent_ne_chunker')
 nltk.download('words')
 
 from pyresparser import ResumeParser
-from pdfminer3.layout import LAParams, LTTextBox
+from pdfminer3.layout import LAParams, LTExtBox
 from pdfminer3.pdfpage import PDFPage
 from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer3.converter import TextConverter
