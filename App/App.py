@@ -1,4 +1,3 @@
-# Developed by dnoobnerd [https://dnoobnerd.netlify.app]     Made with Streamlit
 
 import os
 import sys
