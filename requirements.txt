@@ -4,6 +4,7 @@ numpy<2.0
 scikit-learn
 nltk
 pdfplumber
+PyMuPDF
 python-docx
 docx2txt
 Pillow
