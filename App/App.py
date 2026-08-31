@@ -204,7 +204,7 @@ def show_pdf(file_path):
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page_num in range(len(doc)):
             pix = doc[page_num].get_pixmap(dpi=120)
-            st.image(pix.tobytes("png"), use_column_width=True)
+            st.image(pix.tobytes("png"), use_container_width=True)
         doc.close()
     except Exception as e:
         st.warning(f"Could not render PDF preview ({e}). Use the download button below to view the file.")
