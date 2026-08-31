@@ -192,9 +192,29 @@ def pdf_reader(file):
 # show uploaded file path to view pdf_display
 def show_pdf(file_path):
     with open(file_path, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-    pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
+        pdf_bytes = f.read()
+
+    # NEW: Render each PDF page as an image instead of embedding via
+    # <iframe src="data:application/pdf;base64,...">. That approach worked
+    # on localhost but is blocked by Chrome's stricter Content-Security-Policy
+    # on Streamlit Cloud. Rendering as images has no such restriction and
+    # works identically on every browser and device.
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        for page_num in range(len(doc)):
+            pix = doc[page_num].get_pixmap(dpi=120)
+            st.image(pix.tobytes("png"), use_column_width=True)
+        doc.close()
+    except Exception as e:
+        st.warning(f"Could not render PDF preview ({e}). Use the download button below to view the file.")
+
+    st.download_button(
+        label="📥 Download / View Resume PDF",
+        data=pdf_bytes,
+        file_name=os.path.basename(file_path),
+        mime="application/pdf"
+    )
 
 
 # course recommendations which has data already loaded from Courses.py
@@ -457,6 +477,22 @@ def apply_theme_and_language():
             i.fa-solid, i.fa-regular, i[class*="fa-"] {{
                 font-family: "Font Awesome 6 Free", "FontAwesome" !important;
                 font-weight: 900 !important;
+            }}
+
+            /* NEW: Streamlit's own built-in icons (sidebar collapse/expand
+               arrow, expander chevrons, etc.) are rendered as ligature text
+               using the Material Symbols icon font. The blanket "*" rule
+               above was overriding that font too, so instead of an arrow
+               icon it displayed literal text like "keyboard_double_arrow_right".
+               Restore the icon font for every pattern Streamlit uses. */
+            [data-testid="stIconMaterial"],
+            span[class*="material-symbols"],
+            span[class*="material-icons"],
+            [class*="material-symbols-outlined"],
+            [class*="material-symbols-rounded"] {{
+                font-family: "Material Symbols Outlined", "Material Symbols Rounded", "Material Icons" !important;
+                -webkit-font-feature-settings: "liga";
+                font-feature-settings: "liga";
             }}
 
             /* ---------- Typography ---------- */
@@ -1340,7 +1376,7 @@ def run():
                 ## NOTE: placeholder access code — change this before real deployment
                 if uni_user == 'university2026':
                     st.session_state['uni_access_granted'] = True
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Wrong Access Code Provided")
         else:
@@ -1418,7 +1454,7 @@ def run():
 
             if st.button('Logout'):
                 st.session_state['uni_access_granted'] = False
-                st.experimental_rerun()
+                st.rerun()
 
 
     ###### CODE FOR ADMIN SIDE (ADMIN) ######
@@ -1580,7 +1616,7 @@ def run():
                 st.markdown("---")
                 if st.button("Logout", key="admin_logout_btn"):
                     st.session_state['admin_logged_in'] = False
-                    st.experimental_rerun()
+                    st.rerun()
 
 # Calling the main (run()) function to make the whole process run
 run()
